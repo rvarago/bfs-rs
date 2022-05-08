@@ -57,11 +57,11 @@ impl BucketFilesystem {
     }
 
     fn new_root_attr() -> FileAttr {
-        Self::new_inode_attr(ROOT_INO, FileType::Directory, 0, UNIX_EPOCH)
+        Self::new_attr(ROOT_INO, FileType::Directory, 0, UNIX_EPOCH)
     }
 
     fn new_entry_attr(ino: u64, object: &Object) -> FileAttr {
-        Self::new_inode_attr(
+        Self::new_attr(
             ino,
             FileType::RegularFile,
             object.size,
@@ -69,7 +69,7 @@ impl BucketFilesystem {
         )
     }
 
-    fn new_inode_attr(ino: u64, kind: FileType, size: u64, mtime: SystemTime) -> FileAttr {
+    fn new_attr(ino: u64, kind: FileType, size: u64, mtime: SystemTime) -> FileAttr {
         FileAttr {
             ino,
             size,
