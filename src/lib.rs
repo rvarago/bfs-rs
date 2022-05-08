@@ -77,7 +77,7 @@ fn start_fs(opts: FilesystemOptions, fs: BucketFilesystem) -> eyre::Result<()> {
 
 fn new_connection_from(opts: BackendOptions, rt: Runtime) -> BucketConnection {
     let backend = match opts {
-        BackendOptions::Aws(opts) => rt.block_on(backends::aws::AwsBucketService::new(opts)),
+        BackendOptions::Aws(opts) => rt.block_on(backends::aws::AwsProvider::new(opts)),
     };
 
     BucketConnection::new(backend, rt)

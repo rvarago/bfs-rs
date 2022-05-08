@@ -1,6 +1,6 @@
 //! A backend backed by an s3 bucket.
 
-use super::{BucketService, Object};
+use super::{BucketProvider, Object};
 use async_trait::async_trait;
 use aws_config::ConfigLoader;
 use aws_sdk_s3::Client;
@@ -18,11 +18,11 @@ pub struct Options {
 }
 
 #[derive(Debug)]
-pub(in crate) struct AwsBucketService {
+pub(in crate) struct AwsProvider {
     inner: Client,
 }
 
-impl AwsBucketService {
+impl AwsProvider {
     pub async fn new(opts: Options) -> Self {
         let config = Self::new_config_with(opts).load().await;
         Self {
@@ -41,7 +41,7 @@ impl AwsBucketService {
 }
 
 #[async_trait]
-impl BucketService for AwsBucketService {
+impl BucketProvider for AwsProvider {
     async fn list_objects(&self, bucket_name: &str) -> eyre::Result<Vec<Object>> {
         self.inner
             .list_objects()

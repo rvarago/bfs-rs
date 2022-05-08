@@ -7,14 +7,14 @@ use std::time::SystemTime;
 use tokio::runtime::Runtime;
 
 pub struct BucketConnection {
-    service: Box<dyn BucketService>,
+    service: Box<dyn BucketProvider>,
     rt: Runtime,
 }
 
 impl BucketConnection {
     pub(in crate) fn new<S>(service: S, rt: Runtime) -> Self
     where
-        S: 'static + BucketService,
+        S: 'static + BucketProvider,
     {
         Self {
             service: Box::new(service),
@@ -28,7 +28,7 @@ impl BucketConnection {
 }
 
 #[async_trait]
-pub trait BucketService {
+pub trait BucketProvider {
     async fn list_objects(&self, bucket_name: &str) -> eyre::Result<Vec<Object>>;
 }
 
