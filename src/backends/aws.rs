@@ -5,14 +5,15 @@ use async_trait::async_trait;
 use aws_config::ConfigLoader;
 use aws_sdk_s3::Client;
 use aws_sdk_s3::Endpoint;
-use eyre::eyre;
-use eyre::Context;
+use eyre::{eyre, Context};
 use http::Uri;
 use lifterr::IntoOk;
 use log::warn;
+use serde::Deserialize;
 
-#[derive(Debug)]
+#[derive(Debug, Deserialize)]
 pub struct Options {
+    #[serde(rename = "endpoint", with = "opt_uri", default)]
     pub endpoint_uri: Option<Uri>,
 }
 
@@ -78,4 +79,16 @@ fn try_from_s3_object_impl(o: aws_sdk_s3::model::Object) -> eyre::Result<Object>
         last_modified,
     }
     .into_ok()
+}
+
+mod opt_uri {
+    use http::uri::Uri;
+    use serde::Deserializer;
+
+    pub fn deserialize<'de, D>(de: D) -> Result<Option<Uri>, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        http_serde::uri::deserialize(de).map(Some)
+    }
 }

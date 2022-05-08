@@ -10,11 +10,14 @@ aws-config = "0.11"
 aws-sdk-s3 = "0.11"
 aws-types = "0.11"
 clap = { version = "3", features = ["derive"] }
+config = "0.13"
 env_logger = "0.9"
 eyre = "0.6"
 fuser = "0.11"
 http = "0.2"
+http-serde = "1"
 libc = "0.2"
 lifterr = "0.1"
 log = "0.4"
+serde = { version = "1", features = ["derive"] }
 tokio = { version = "1", features = ["full"] }

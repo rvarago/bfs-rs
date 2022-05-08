@@ -11,9 +11,21 @@ A toy FUSE view over a cloud-hosted storage bucket.
 
 `bfs-rs` is a simple readonly, "Filesystem in Userspace" (FUSE) where data gets fetched from a cloud-storage through a backend.
 
-## Configuration Schema
+## Configuration
 
-TODO
+So long as the extension matches a format supported by the [config crate](https://github.com/mehcode/config-rs), the user may pick whatever one likes. As an example, here's the schema informally defined as a TOML document:
+
+```toml
+[source]
+bucket = "<string>"
+
+[filesystem]
+mountpoint = "<path>"
+
+[backend]
+provider = "<aws>"
+endpoint = "<uri>" # optional
+```
 
 ## Backends
 
@@ -25,7 +37,6 @@ TODO
 
 ## Wish-list
 
-- Extract hard-coded parameters into a configuration file,
 - Hide backends behind feature flags.
 
 ## Instructions

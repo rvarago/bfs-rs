@@ -8,41 +8,74 @@ use eyre::{eyre, Context};
 use fs::BucketFilesystem;
 use fuser::MountOption;
 use log::info;
-use std::path::PathBuf;
+use serde::Deserialize;
+use std::path::{Path, PathBuf};
 use tokio::runtime::Runtime;
 
-#[derive(Debug)]
+#[derive(Debug, Deserialize)]
 pub struct Config {
-    pub bucket_name: String,
-    pub mountpoint: PathBuf,
-
+    #[serde(rename = "source")]
+    pub source: SourceOptions,
+    #[serde(rename = "filesystem")]
+    pub filesystem: FilesystemOptions,
+    #[serde(rename = "backend")]
     pub backend: BackendOptions,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Deserialize)]
+pub struct SourceOptions {
+    #[serde(rename = "bucket")]
+    pub bucket_name: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct FilesystemOptions {
+    #[serde(rename = "mountpoint")]
+    pub mountpoint: PathBuf,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(tag = "provider")]
 pub enum BackendOptions {
+    #[serde(rename = "aws")]
     Aws(backends::aws::Options),
 }
 
-// Starts the filesystem, mounting it at the specified location.
-pub fn run_app(cfg: Config, rt: Runtime) -> eyre::Result<()> {
-    let conn = new_backend_from(cfg.backend, rt);
+impl Config {
+    /// Loads the configuration at `path`.
+    pub fn load_from(path: impl AsRef<Path>) -> eyre::Result<Self> {
+        let cfg = config::ConfigBuilder::<config::builder::DefaultState>::default()
+            .add_source(config::File::from(path.as_ref()))
+            .build()
+            .wrap_err("unable to load from source")?;
 
-    let fs = BucketFilesystem::new(cfg.bucket_name, conn)
-        .wrap_err_with(|| eyre!("unable to construct bucket fs"))?;
+        cfg.try_deserialize().wrap_err("unable to deserialize")
+    }
+}
+
+/// Starts the filesystem, mounting it at the specified location.
+pub fn run_app(cfg: Config, rt: Runtime) -> eyre::Result<()> {
+    let conn = new_connection_from(cfg.backend, rt);
+
+    let fs = BucketFilesystem::new(cfg.source.bucket_name, conn)
+        .wrap_err("unable to construct bucket fs")?;
 
     info!("starting bfs");
 
+    start_fs(cfg.filesystem, fs)
+}
+
+fn start_fs(opts: FilesystemOptions, fs: BucketFilesystem) -> eyre::Result<()> {
     let mount_opts = vec![MountOption::RO, MountOption::NoExec];
-    fuser::mount2(fs, &cfg.mountpoint, &mount_opts).wrap_err_with(|| {
+    fuser::mount2(fs, &opts.mountpoint, &mount_opts).wrap_err_with(|| {
         eyre!(
             "unable to mount bucket fs at mountpoint={}",
-            cfg.mountpoint.display()
+            opts.mountpoint.display()
         )
     })
 }
 
-fn new_backend_from(opts: BackendOptions, rt: Runtime) -> BucketConnection {
+fn new_connection_from(opts: BackendOptions, rt: Runtime) -> BucketConnection {
     let backend = match opts {
         BackendOptions::Aws(opts) => rt.block_on(backends::aws::AwsBucketService::new(opts)),
     };
