@@ -3,7 +3,7 @@
 pub mod backends;
 mod fs;
 
-use backends::BucketConnection;
+use backends::BlockingConnection;
 use eyre::{eyre, Context};
 use fs::BucketFilesystem;
 use fuser::MountOption;
@@ -75,10 +75,10 @@ fn start_fs(opts: FilesystemOptions, fs: BucketFilesystem) -> eyre::Result<()> {
     })
 }
 
-fn new_connection_from(opts: BackendOptions, rt: Runtime) -> BucketConnection {
+fn new_connection_from(opts: BackendOptions, rt: Runtime) -> BlockingConnection {
     let backend = match opts {
         BackendOptions::Aws(opts) => rt.block_on(backends::aws::AwsProvider::new(opts)),
     };
 
-    BucketConnection::new(backend, rt)
+    BlockingConnection::new(backend, rt)
 }

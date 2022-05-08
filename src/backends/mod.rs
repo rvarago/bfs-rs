@@ -6,12 +6,12 @@ use async_trait::async_trait;
 use std::time::SystemTime;
 use tokio::runtime::Runtime;
 
-pub struct BucketConnection {
+pub struct BlockingConnection {
     service: Box<dyn BucketProvider>,
     rt: Runtime,
 }
 
-impl BucketConnection {
+impl BlockingConnection {
     pub(in crate) fn new<S>(service: S, rt: Runtime) -> Self
     where
         S: 'static + BucketProvider,

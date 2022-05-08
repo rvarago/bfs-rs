@@ -6,7 +6,7 @@
 //!
 //! This implies that operations performed in the buckets *outside the filesystem* are **not** visible to the latter.
 
-use crate::backends::{BucketConnection, Object};
+use crate::backends::{BlockingConnection, Object};
 use fuser::{FileAttr, FileType, Filesystem, ReplyAttr, ReplyDirectory, ReplyEntry, Request};
 use libc::ENOENT;
 use lifterr::IntoOk;
@@ -32,7 +32,7 @@ const ROOT_PATH: &str = "/";
 const TTL: Duration = Duration::from_secs(1);
 
 impl BucketFilesystem {
-    pub fn new(bucket_name: String, conn: BucketConnection) -> eyre::Result<Self> {
+    pub fn new(bucket_name: String, conn: BlockingConnection) -> eyre::Result<Self> {
         let objects = conn.list_objects(&bucket_name)?;
 
         let (attrs, inodes) = Self::new_fs_from(objects);
