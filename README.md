@@ -11,6 +11,17 @@ A toy FUSE filesystem view over a cloud-hosted storage bucket.
 
 `bfs-rs` is a simple readonly, "Filesystem in Userspace" (FUSE) where data gets fetched from a cloud-storage through a backend.
 
+### Operations
+
+- Given a directory, list its files,
+- Given a directory or file, show its metadata,
+- Given a file, show its content.
+
+Where:
+
+- A **directory** is a bucket,
+- A **file** is a object in a bucket.
+
 ## Configuration
 
 So long as the extension matches a format supported by the [config crate](https://github.com/mehcode/config-rs), the user may pick whatever one likes. As an example, here's the schema informally defined as a TOML document:
