@@ -5,10 +5,18 @@
 //! For simplicity, buckets are queried upon construction and objects cached for the whole life-time of the filesystem.
 //!
 //! This implies that operations performed in the buckets *outside the filesystem* are **not** visible to the latter.
+//!
+//! On the other hand, content stored in objects are downloaded on a per-read basis with **no** caching.
+//!
+//! Hence, this might be resource-wise prohibitive to some applications.
+
+// TODO: Revisit data definitions such that we can make queries more efficient (e.g. avoid linear scan upon reading files).
 
 use crate::backends::{BlockingConnection, Object};
-use fuser::{FileAttr, FileType, Filesystem, ReplyAttr, ReplyDirectory, ReplyEntry, Request};
-use libc::ENOENT;
+use fuser::{
+    FileAttr, FileType, Filesystem, ReplyAttr, ReplyData, ReplyDirectory, ReplyEntry, Request,
+};
+use libc::{EIO, ENOENT};
 use lifterr::IntoOk;
 use log::{debug, warn};
 use std::{
@@ -17,10 +25,12 @@ use std::{
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
 
-#[derive(Debug)]
 pub struct BucketFilesystem {
+    bucket_name: String,
     attrs: Attrs,
     inodes: Inodes,
+
+    conn: BlockingConnection,
 }
 
 type Attrs = HashMap<u64, FileAttr>;
@@ -37,7 +47,13 @@ impl BucketFilesystem {
 
         let (attrs, inodes) = Self::new_fs_from(objects);
 
-        Self { attrs, inodes }.into_ok()
+        Self {
+            bucket_name,
+            attrs,
+            inodes,
+            conn,
+        }
+        .into_ok()
     }
 
     fn new_fs_from(objects: Vec<Object>) -> (Attrs, Inodes) {
@@ -150,6 +166,44 @@ impl Filesystem for BucketFilesystem {
         } else {
             warn!("attempted to read non-root dir, ino={}", ino);
             reply.error(ENOENT);
+        }
+    }
+
+    fn read(
+        &mut self,
+        _req: &Request<'_>,
+        ino: u64,
+        fh: u64,
+        offset: i64,
+        size: u32,
+        _flags: i32,
+        _lock_owner: Option<u64>,
+        reply: ReplyData,
+    ) {
+        debug!(
+            "read(ino={}, fh={}, offset={}, size={})",
+            ino, fh, offset, size
+        );
+
+        match self
+            .inodes
+            .iter()
+            .find_map(|(path, i)| (*i == ino).then(|| path))
+        {
+            Some(path) => {
+                let path = path.to_string_lossy();
+                match self.conn.download_object(&self.bucket_name, path.as_ref()) {
+                    Ok(content) => reply.data(content.as_ref()),
+                    Err(e) => {
+                        warn!("unable download object, cause={:#}", e);
+                        reply.error(EIO)
+                    }
+                }
+            }
+            None => {
+                warn!("attempted to read from non-existent file, ino={}", ino);
+                reply.error(ENOENT)
+            }
         }
     }
 }

@@ -3,8 +3,8 @@
 use super::{Backend, Object};
 use async_trait::async_trait;
 use aws_config::ConfigLoader;
-use aws_sdk_s3::Client;
-use aws_sdk_s3::Endpoint;
+use aws_sdk_s3::{Client, Endpoint};
+use bytes::Bytes;
 use eyre::{eyre, Context};
 use http::Uri;
 use lifterr::IntoOk;
@@ -54,6 +54,34 @@ impl Backend for Provider {
             .into_iter()
             .filter_map(try_from_s3_object)
             .collect::<Vec<_>>()
+            .into_ok()
+    }
+
+    async fn download_object(&self, bucket_name: &str, key: &str) -> eyre::Result<Bytes> {
+        self.inner
+            .get_object()
+            .bucket(bucket_name)
+            .key(key)
+            .send()
+            .await
+            .wrap_err_with(|| {
+                eyre!(
+                    "unable to download object in s3 bucket={} with key={}",
+                    bucket_name,
+                    key
+                )
+            })?
+            .body
+            .collect()
+            .await
+            .wrap_err_with(|| {
+                eyre!(
+                    "unable to read full content of object in s3 bucket={} with key={}",
+                    bucket_name,
+                    key
+                )
+            })?
+            .into_bytes()
             .into_ok()
     }
 }

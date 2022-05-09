@@ -364,6 +364,7 @@ dependencies = [
  "aws-config",
  "aws-sdk-s3",
  "aws-types",
+ "bytes",
  "clap",
  "config",
  "env_logger",

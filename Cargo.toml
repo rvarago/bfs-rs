@@ -9,6 +9,7 @@ async-trait = "0.1"
 aws-config = "0.11"
 aws-sdk-s3 = "0.11"
 aws-types = "0.11"
+bytes = "1"
 clap = { version = "3", features = ["derive"] }
 config = "0.13"
 env_logger = "0.9"
