@@ -31,5 +31,5 @@ fn run(cli: Cli, rt: Runtime) -> eyre::Result<()> {
         )
     })?;
 
-    bfs::run_app(cfg, rt)
+    bfs::run(cfg, rt)
 }

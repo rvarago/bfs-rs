@@ -54,7 +54,7 @@ impl Config {
 }
 
 /// Starts the filesystem, mounting it at the specified location.
-pub fn run_app(cfg: Config, rt: Runtime) -> eyre::Result<()> {
+pub fn run(cfg: Config, rt: Runtime) -> eyre::Result<()> {
     let conn = new_connection_from(cfg.backend, rt);
 
     let fs = BucketFilesystem::new(cfg.source.bucket_name, conn)
