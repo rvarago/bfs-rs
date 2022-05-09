@@ -43,7 +43,16 @@ impl BucketFilesystem {
     fn new_fs_from(objects: Vec<Object>) -> (Attrs, Inodes) {
         let (mut attrs, mut inodes) = Self::new_childs_from(objects);
 
-        attrs.insert(ROOT_INO, Self::new_root_attr(ROOT_INO, 0, UNIX_EPOCH));
+        let (root_size, root_mtime) =
+            attrs.values().fold((0, UNIX_EPOCH), |(size, mtime), attr| {
+                (size + attr.size, mtime.max(attr.mtime))
+            });
+
+        attrs.insert(
+            ROOT_INO,
+            Self::new_root_attr(ROOT_INO, root_size, root_mtime),
+        );
+
         inodes.insert(ROOT_PATH.into(), ROOT_INO);
 
         (attrs, inodes)
