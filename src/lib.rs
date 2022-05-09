@@ -66,7 +66,12 @@ pub fn run(cfg: Config, rt: Runtime) -> eyre::Result<()> {
 }
 
 fn start_fs(opts: FilesystemOptions, fs: BucketFilesystem) -> eyre::Result<()> {
-    let mount_opts = vec![MountOption::RO, MountOption::NoExec];
+    let mount_opts = vec![
+        MountOption::FSName("bfs".into()),
+        MountOption::RO,
+        MountOption::NoExec,
+    ];
+
     fuser::mount2(fs, &opts.mountpoint, &mount_opts).wrap_err_with(|| {
         eyre!(
             "unable to mount bucket fs at mountpoint={}",
