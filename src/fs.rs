@@ -70,10 +70,12 @@ impl BucketFilesystem {
     }
 
     fn new_attr(ino: u64, kind: FileType, size: u64, mtime: SystemTime) -> FileAttr {
+        const BLOCK_SIZE: u32 = 512;
+
         FileAttr {
             ino,
             size,
-            blocks: 0,
+            blocks: (size + BLOCK_SIZE as u64 - 1) / BLOCK_SIZE as u64,
             atime: UNIX_EPOCH,
             mtime,
             ctime: UNIX_EPOCH,
@@ -84,7 +86,7 @@ impl BucketFilesystem {
             uid: 0,
             gid: 0,
             rdev: 0,
-            blksize: 0,
+            blksize: BLOCK_SIZE,
             flags: 0,
         }
     }
