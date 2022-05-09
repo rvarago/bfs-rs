@@ -1,6 +1,6 @@
 # bfs-rs
 
-A toy FUSE view over a cloud-hosted storage bucket.
+A toy FUSE filesystem view over a cloud-hosted storage bucket.
 
 ## Disclaimer
 
@@ -37,6 +37,7 @@ TODO
 
 ## Wish-list
 
+- Add missing operations,
 - Hide backends behind feature flags.
 
 ## Instructions
