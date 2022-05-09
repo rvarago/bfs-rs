@@ -80,7 +80,7 @@ impl BucketFilesystem {
             crtime: UNIX_EPOCH,
             kind,
             perm: 0o444, // -r--r--r--
-            nlink: 0,
+            nlink: 1,
             uid: 0,
             gid: 0,
             rdev: 0,
