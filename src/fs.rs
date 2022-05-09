@@ -41,32 +41,32 @@ impl BucketFilesystem {
     }
 
     fn new_fs_from(objects: Vec<Object>) -> (Attrs, Inodes) {
-        let mut attrs = HashMap::default();
-        let mut inodes = HashMap::default();
+        let (mut attrs, mut inodes) = Self::new_childs_from(objects);
 
-        attrs.insert(ROOT_INO, Self::new_root_attr());
+        attrs.insert(ROOT_INO, Self::new_root_attr(ROOT_INO, 0, UNIX_EPOCH));
         inodes.insert(ROOT_PATH.into(), ROOT_INO);
-
-        objects.into_iter().enumerate().for_each(|(ino, object)| {
-            let attr = Self::new_entry_attr(ino as u64 + 2, &object);
-            attrs.insert(attr.ino, attr);
-            inodes.insert(object.name.into(), attr.ino);
-        });
 
         (attrs, inodes)
     }
 
-    fn new_root_attr() -> FileAttr {
-        Self::new_attr(ROOT_INO, FileType::Directory, 0, UNIX_EPOCH)
+    fn new_childs_from(objects: Vec<Object>) -> (Attrs, Inodes) {
+        objects
+            .into_iter()
+            .enumerate()
+            .map(|(i, object)| {
+                let ino = i as u64 + 2;
+                let attr = Self::new_child_attr(ino, object.size, object.last_modified);
+                ((ino, attr), (object.name.into(), ino))
+            })
+            .unzip()
     }
 
-    fn new_entry_attr(ino: u64, object: &Object) -> FileAttr {
-        Self::new_attr(
-            ino,
-            FileType::RegularFile,
-            object.size,
-            object.last_modified,
-        )
+    fn new_root_attr(ino: u64, size: u64, mtime: SystemTime) -> FileAttr {
+        Self::new_attr(ino, FileType::Directory, size, mtime)
+    }
+
+    fn new_child_attr(ino: u64, size: u64, mtime: SystemTime) -> FileAttr {
+        Self::new_attr(ino, FileType::RegularFile, size, mtime)
     }
 
     fn new_attr(ino: u64, kind: FileType, size: u64, mtime: SystemTime) -> FileAttr {
